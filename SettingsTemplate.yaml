@@ -1,0 +1,12 @@
+body:
+  - type: textBlock
+    attributes:
+      name: description
+      description: >
+        Fast local library search & Cinemeta catalog lookup for Stremio.
+  - type: checkbox
+    attributes:
+      name: require_question_mark_for_online
+      label: "Require '?' for online catalog search (Power User Mode)"
+      defaultValue: false
+      description: "When enabled, online Cinemeta search only triggers when you append '?' (e.g. sm dune?). When disabled (default), normal search seamlessly queries both your local library and online catalog."

@@ -1,0 +1,12 @@
+{
+  "ID": "b81045ca-d93b-4866-9e90-8e10b10f2df1",
+  "ActionKeyword": "sm",
+  "Name": "Stremio Search",
+  "Description": "Fast local library search & catalog lookup for Stremio",
+  "Author": "NubPlayz",
+  "Version": "1.0.1",
+  "Language": "python",
+  "Website": "https://github.com/NubPlayz/Stremio-search-flowLauncher-plugin",
+  "ExecuteFileName": "main.py",
+  "IcoPath": "assets/icon.png"
+}
