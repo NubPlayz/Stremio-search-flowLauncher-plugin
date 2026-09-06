@@ -1,0 +1,46 @@
+name: Release Plugin
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(python -c "import json; print(json.load(open('plugin.json'))['Version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create plugin zip
+        shell: bash
+        run: |
+          mkdir -p dist
+
+          zip -r "dist/Stremio-Search-${{ steps.version.outputs.version }}.zip" \
+            plugin.json \
+            main.py \
+            SettingsTemplate.yaml \
+            plugin \
+            assets \
+            -x "*.pyc" \
+            -x "*/__pycache__/*"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Stremio Search v${{ steps.version.outputs.version }}
+          files: dist/Stremio-Search-${{ steps.version.outputs.version }}.zip
+          generate_release_notes: true
