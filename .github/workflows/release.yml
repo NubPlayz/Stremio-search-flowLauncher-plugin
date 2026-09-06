@@ -1,34 +1,40 @@
-name: Release Plugin
+name: Publish Release
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: write
+    branches: [main]
+    paths-ignore:
+      - .github/workflows/*
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
+    env:
+      python_ver: "3.11"
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Read version
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.python_ver }}
+
+      - name: Get version
         id: version
-        shell: bash
+        uses: notiz-dev/github-action-json-property@release
+        with:
+          path: plugin.json
+          prop_path: Version
+
+      - name: Install dependencies
         run: |
-          VERSION=$(python -c "import json; print(json.load(open('plugin.json'))['Version'])")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          python -m pip install --upgrade pip
 
       - name: Create plugin zip
-        shell: bash
         run: |
-          mkdir -p dist
-
-          zip -r "dist/Stremio-Search-${{ steps.version.outputs.version }}.zip" \
+          zip -r "Stremio-Search-${{ steps.version.outputs.prop }}.zip" \
             plugin.json \
             main.py \
             SettingsTemplate.yaml \
@@ -37,10 +43,8 @@ jobs:
             -x "*.pyc" \
             -x "*/__pycache__/*"
 
-      - name: Create GitHub release
+      - name: Publish
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: Stremio Search v${{ steps.version.outputs.version }}
-          files: dist/Stremio-Search-${{ steps.version.outputs.version }}.zip
-          generate_release_notes: true
+          files: "Stremio-Search-${{ steps.version.outputs.prop }}.zip"
+          tag_name: "v${{ steps.version.outputs.prop }}"
