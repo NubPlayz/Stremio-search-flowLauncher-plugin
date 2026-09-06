@@ -177,6 +177,7 @@ def handle_query(raw_query: str, settings: Dict[str, Any] = None) -> List[Dict[s
             try:
                 catalog_raw = search_cinemeta(query)
                 catalog_items = deduplicate_catalog(catalog_raw, cached_library)
+                catalog_items = search_items(catalog_items, query, threshold=40.0)
                 if not catalog_items:
                     return [{
                         "Title": f'No online matches found for "{query}"',
@@ -227,6 +228,7 @@ def handle_query(raw_query: str, settings: Dict[str, Any] = None) -> List[Dict[s
     try:
         catalog_raw = search_cinemeta(query)
         catalog_items = deduplicate_catalog(catalog_raw, cached_library)
+        catalog_items = search_items(catalog_items, query, threshold=40.0)
     except Exception:
         catalog_error = True
         

@@ -1,6 +1,7 @@
 import json
 import urllib.request
 import urllib.parse
+import concurrent.futures
 from typing import List, Dict, Any
 
 STREMIO_API_URL = "https://api.strem.io/api/datastoreGet"
@@ -33,20 +34,40 @@ def fetch_library(auth_key: str, timeout: int = 10) -> List[Dict[str, Any]]:
     except Exception as e:
         raise StremioApiError(f"Network error while fetching library: {e}")
 
+def _fetch_cinemeta_catalog(media_type: str, encoded_query: str, timeout: int) -> List[Dict[str, Any]]:
+    """Fetch a single Cinemeta catalog endpoint. Returns metas list or empty on error."""
+    url = f"{CINEMETA_CATALOG_URL}/{media_type}/top/search={encoded_query}.json"
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            metas = data.get("metas", [])
+            if isinstance(metas, list):
+                return metas
+    except Exception:
+        pass
+    return []
+
 def search_cinemeta(query: str, timeout: int = 8) -> List[Dict[str, Any]]:
     encoded_query = urllib.parse.quote(query)
+    media_types = ("movie", "series")
     results = []
-    
-    for media_type in ("movie", "series"):
-        url = f"{CINEMETA_CATALOG_URL}/{media_type}/top/search={encoded_query}.json"
-        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                metas = data.get("metas", [])
-                if isinstance(metas, list):
-                    results.extend(metas)
-        except Exception:
-            continue
-            
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        futures = {
+            executor.submit(_fetch_cinemeta_catalog, m_type, encoded_query, timeout): m_type
+            for m_type in media_types
+        }
+        type_to_results: Dict[str, List[Dict[str, Any]]] = {}
+        for future in concurrent.futures.as_completed(futures):
+            m_type = futures[future]
+            try:
+                type_to_results[m_type] = future.result()
+            except Exception:
+                type_to_results[m_type] = []
+
+        for m_type in media_types:
+            results.extend(type_to_results.get(m_type, []))
+
     return results
+
