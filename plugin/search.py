@@ -56,5 +56,5 @@ def search_items(items: List[Dict[str, Any]], query: str, threshold: float = 55.
         if final_score >= threshold:
             scored.append((final_score, item))
             
-    scored.sort(key=lambda x: x[0], reverse=True)
+    scored.sort(key=lambda x: (-x[0], len(x[1].get("name", ""))))
     return [item for _, item in scored]
